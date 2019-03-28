@@ -155,6 +155,7 @@ def _get_args():
         action="store",
         dest="distance",
         default=50,
+        type=int,
         help='The distance used to combine small indels into a large region. Default is 50bp',
     )
     parser.add_argument(
@@ -163,6 +164,7 @@ def _get_args():
         action="store",
         dest="max",
         default=50000,
+        type=int,
         help='The distance used to define the max of peak size',
     )
     parser.add_argument(
@@ -171,6 +173,7 @@ def _get_args():
         action="store",
         dest="perc",
         default=0.2,
+        type=float,
         help='Threshold to remove non-primary fragments (fraction of total region length)',
     )
     parser.add_argument(

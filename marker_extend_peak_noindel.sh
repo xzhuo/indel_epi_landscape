@@ -45,4 +45,4 @@ bigWigAverageOverBed $panTro5mappability <(perl -lane 'BEGIN{$,="\t"}{print $F[6
 paste <(sort -k1,1V hg38.${m}.mappability.tab) <(sort -k1,1V panTro5.${m}.mappability.tab) | cut -f5,11 | paste all_peaks_on_both.collapse.${m}.out.txt - | perl -lane 'BEGIN{$,="\t"}{@map = splice @F,-2,2; print @F if $map[0] > 0.7 && $map[1] > 0.7}' > all_peaks_on_both.collapse.${m}.mappability0.7.txt
 paste <(sort -k1,1V hg38.${m}.mappability.tab) <(sort -k1,1V panTro5.${m}.mappability.tab) | cut -f3,4,5,9,10,11 | paste all_peaks_on_both.collapse.${m}.out.txt - > all_peaks_on_both.collapse.${m}.mappability.txt
 perl -lane 'BEGIN{$,="\t"}{@map = splice @F,-6,6; print @F if $map[2] > 0.7 && $map[5] > 0.7}' all_peaks_on_both.collapse.${m}.mappability.txt > all_peaks_on_both.collapse.${m}.map_pass.txt
-perl -lane 'BEGIN{$,="\t"}{print @F if $F[5]>830 or $F[11]>830}' all_peaks_on_both.collapse.${m}.map_pass.txt > all_peaks_on_both.collapse.${m}.map_pass.idr_peak.txt
+perl -lane 'BEGIN{$,="\t"}{print @F if $F[5]>830 or $F[11]>830}' all_peaks_on_both.collapse.${m}.map_pass.txt > all_peaks_on_both.collapse.${m}.map_pass.idr_peak.noindel.txt
