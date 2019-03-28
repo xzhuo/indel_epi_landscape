@@ -17,7 +17,7 @@ python2 ~/github/indel_epi_landscape/CrossMap+.py bed $panTro5ToHg38 <(awk 'BEGI
 perl -lane 'BEGIN{$,="\t"}{@i=split /:/, $F[4]; print $F[5],$F[6],$F[7],$F[8],$F[9],$F[10],$F[4],$F[0],$F[1],$F[2],$F[8],$F[9],$F[3] if $i[1] eq $F[12] && $i[2] == $F[13] && $i[3] == $F[14]}' hg38_crossmap_panTro5_back_hg38.${m}.lite.strand.bed > hg38_crossmap_panTro5_bothway.${m}.lite.strand.bed
 
 # run crossmap parser and filter:
-python3 ~/github/indel_epi_landscape/crossmap_parser.py -b -i hg38_crossmap_panTro5_bothway.${m}.lite.strand.bed > hg38_crossmap_panTro5.${m}.filter.bed
+python3 ~/github/indel_epi_landscape/crossmap_parser.py -d 20 -m 20 -b -i hg38_crossmap_panTro5_bothway.${m}.lite.strand.bed > hg38_crossmap_panTro5.${m}.filter.bed
 perl -lane 'print $_ if length($F[6]) < 6 and $F[6] ne "chrM"' hg38_crossmap_panTro5.${m}.filter.bed > hg38_crossmap_panTro5.${m}.filter.lite.bed
 perl -lane 'BEGIN{$,="\t"}{print $F[0],$F[1],$F[2],"human_$.",$F[5],$F[3]}' hg38_crossmap_panTro5.${m}.filter.lite.bed |sort -k1,1 -k2,2n -k3,3n > hg38_peak_onhg38.${m}.lite.bed
 perl -lane 'BEGIN{$,="\t"}{print $F[6],$F[7],$F[8],"human_$.",$F[5],$F[9]}' hg38_crossmap_panTro5.${m}.filter.lite.bed |sort -k1,1 -k2,2n -k3,3n > hg38_peak_onpanTro5.${m}.lite.bed
@@ -29,7 +29,7 @@ python2 ~/github/indel_epi_landscape/CrossMap+.py bed $hg38ToPanTro5 <(awk 'BEGI
 perl -lane 'BEGIN{$,="\t"}{@i=split /:/, $F[4]; print $F[5],$F[6],$F[7],$F[8],$F[9],$F[10],$F[4],$F[0],$F[1],$F[2],$F[8],$F[9],$F[3] if $i[1] eq $F[12] && $i[2] == $F[13] && $i[3] == $F[14]}' panTro5_crossmap_hg38_back_panTro5.${m}.lite.strand.bed > panTro5_crossmap_hg38_bothway.${m}.lite.strand.bed
 
 # run crossmap parser and filter:
-python3 ~/github/indel_epi_landscape/crossmap_parser.py -b -i panTro5_crossmap_hg38_bothway.${m}.lite.strand.bed > panTro5_crossmap_hg38.${m}.filter.bed
+python3 ~/github/indel_epi_landscape/crossmap_parser.py -d 20 -m 20 -b -i panTro5_crossmap_hg38_bothway.${m}.lite.strand.bed > panTro5_crossmap_hg38.${m}.filter.bed
 perl -lane 'print $_ if length($F[6]) < 6 and $F[6] ne "chrM"' panTro5_crossmap_hg38.${m}.filter.bed > panTro5_crossmap_hg38.${m}.filter.lite.bed
 perl -lane 'BEGIN{$,="\t"}{print $F[0],$F[1],$F[2],"chimp_$.",$F[5],$F[3]}' panTro5_crossmap_hg38.${m}.filter.lite.bed |sort -k1,1 -k2,2n -k3,3n > panTro5_peak_onpanTro5.${m}.lite.bed
 perl -lane 'BEGIN{$,="\t"}{print $F[6],$F[7],$F[8],"chimp_$.",$F[5],$F[9]}' panTro5_crossmap_hg38.${m}.filter.lite.bed |sort -k1,1 -k2,2n -k3,3n > panTro5_peak_onhg38.${m}.lite.bed
@@ -44,7 +44,7 @@ bigWigAverageOverBed $hg38mappability <(perl -lane 'BEGIN{$,="\t"}{print $F[0],$
 bigWigAverageOverBed $panTro5mappability <(perl -lane 'BEGIN{$,="\t"}{print $F[6],$F[7],$F[8],"index_$."}' all_peaks_on_both.collapse.${m}.out.txt) panTro5.${m}.mappability.tab
 paste <(sort -k1,1V hg38.${m}.mappability.tab) <(sort -k1,1V panTro5.${m}.mappability.tab) | cut -f5,11 | paste all_peaks_on_both.collapse.${m}.out.txt - | perl -lane 'BEGIN{$,="\t"}{@map = splice @F,-2,2; print @F if $map[0] > 0.7 && $map[1] > 0.7}' > all_peaks_on_both.collapse.${m}.mappability0.7.txt
 paste <(sort -k1,1V hg38.${m}.mappability.tab) <(sort -k1,1V panTro5.${m}.mappability.tab) | cut -f3,4,5,9,10,11 | paste all_peaks_on_both.collapse.${m}.out.txt - > all_peaks_on_both.collapse.${m}.mappability.txt
-perl -lane 'BEGIN{$,="\t"}{@map = splice @F,-6,6; print @F if $map[2] > 0.7 && $map[5] > 0.7}' all_peaks_on_both.collapse.${m}.mappability.txt > all_peaks_on_both.collapse.${m}.map_pass.txt
+perl -lane 'BEGIN{$,="\t"}{@map = splice @F,-6,6; print @F if $map[2] > 0.7 && $map[5] > 0.7}' all_peaks_on_both.collapse.${m}.mappability.txt > all_peaks_on_both.collapse.${m}.map_pass.noindel.txt
 
 #did not run IDR on broadpeaks.
 # perl -lane 'BEGIN{$,="\t"}{print @F if $F[5]>830 or $F[11]>830}' all_peaks_on_both.collapse.${m}.map_pass.txt > all_peaks_on_both.collapse.${m}.map_pass.idr_peak.txt
