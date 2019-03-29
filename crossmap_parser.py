@@ -32,7 +32,7 @@ class Region:
             length += frag.length(assembly)
         return length
 
-    def combine_frags(self, size_limit, mini):
+    def combine_frags(self, size_limit, mini, stringent):
         ''' Combine frags based on chr, strand, and within size_limit. at least one of the gaps is < mini to be considered as continuous fragments.'''
         frag_dict = {}
         for frag in self.frags:
@@ -49,15 +49,16 @@ class Region:
                     split_pos.append(i)
             if not len(split_pos):
                 combined_frag_dict[key] = frag_dict[key]
-            for i in range(len(split_pos)):
-                key_index = key + str(i)
-                if i == 0:
-                    combined_frag_dict[key_index] = frag_dict[key][:split_pos[i]]
-                else:
-                    combined_frag_dict[key_index] = frag_dict[key][split_pos[i - 1]:split_pos[i]]
-                if i + 1 not in range(len(split_pos)):
-                    key_index = key + str(i + 1)
-                    combined_frag_dict[key_index] = frag_dict[key][split_pos[i]:]
+            if not stringent:  # split frag_dicts be default. Don't keep them if stringent.
+                for i in range(len(split_pos)):
+                    key_index = key + str(i)
+                    if i == 0:
+                        combined_frag_dict[key_index] = frag_dict[key][:split_pos[i]]
+                    else:
+                        combined_frag_dict[key_index] = frag_dict[key][split_pos[i - 1]:split_pos[i]]
+                    if i + 1 not in range(len(split_pos)):
+                        key_index = key + str(i + 1)
+                        combined_frag_dict[key_index] = frag_dict[key][split_pos[i]:]
         self.frags = []
         for key_index in combined_frag_dict:
             merged_frag = Region.merge_all_frags(combined_frag_dict[key_index])
@@ -94,14 +95,14 @@ class Region:
     def can_merge(frag1, frag2, distance, mini):
         from_gap = abs(max(frag1.from_start, frag2.from_start) - min(frag1.from_end, frag2.from_end))
         to_gap = abs(max(frag1.to_start, frag2.to_start) - min(frag1.to_end, frag2.to_end))
-        return (frag1.from_chr == frag2.from_chr and
-                frag1.from_strand == frag2.from_strand and
-                from_gap < distance and
-                frag1.to_chr == frag2.to_chr and
-                frag1.to_strand == frag2.to_strand and
-                to_gap < distance and
-                min(from_gap, to_gap) < mini and
-                (frag2.to_start >= frag1.to_start if (frag1.to_strand == "+") else frag2.to_end <= frag1.to_end))
+        return (frag1.from_chr == frag2.from_chr
+                and frag1.from_strand == frag2.from_strand
+                and from_gap < distance
+                and frag1.to_chr == frag2.to_chr
+                and frag1.to_strand == frag2.to_strand
+                and to_gap < distance
+                and min(from_gap, to_gap) < mini
+                and (frag2.to_start >= frag1.to_start if (frag1.to_strand == "+") else frag2.to_end <= frag1.to_end))
 
 
 class Frag:
@@ -184,6 +185,14 @@ def _get_args():
         default=False,
         help='If the input peaks are broadpeaks (broad peaks do not have summit defined)',
     )
+    parser.add_argument(
+        '--stringent',
+        '-s',
+        action="store_true",
+        dest="stringent",
+        default=False,
+        help='If true, remove all regions splitted by indels larger than max. Default is false',
+    )
     return parser.parse_args()
 
 
@@ -209,7 +218,7 @@ def main():
                         last_region.frags.append(frag)
 
     for region in regions:
-        region.combine_frags(args.max, args.distance)
+        region.combine_frags(args.max, args.distance, args.stringent)
         region.keep_primary(args.perc, args.broad)
         num_frags = len(region.frags)
         for index, frag in enumerate(region.frags):
