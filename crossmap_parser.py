@@ -32,7 +32,7 @@ class Region:
             length += frag.length(assembly)
         return length
 
-    def combine_frags(self, size_limit, mini, stringent):
+    def combine_frags(self, size_limit, mini):
         ''' Combine frags based on chr, strand, and within size_limit. at least one of the gaps is < mini to be considered as continuous fragments.'''
         frag_dict = {}
         for frag in self.frags:
@@ -49,16 +49,15 @@ class Region:
                     split_pos.append(i)
             if not len(split_pos):
                 combined_frag_dict[key] = frag_dict[key]
-            if not stringent:  # split frag_dicts be default. Don't keep them if stringent.
-                for i in range(len(split_pos)):
-                    key_index = key + str(i)
-                    if i == 0:
-                        combined_frag_dict[key_index] = frag_dict[key][:split_pos[i]]
-                    else:
-                        combined_frag_dict[key_index] = frag_dict[key][split_pos[i - 1]:split_pos[i]]
-                    if i + 1 not in range(len(split_pos)):
-                        key_index = key + str(i + 1)
-                        combined_frag_dict[key_index] = frag_dict[key][split_pos[i]:]
+            for i in range(len(split_pos)):
+                key_index = key + str(i)
+                if i == 0:
+                    combined_frag_dict[key_index] = frag_dict[key][:split_pos[i]]
+                else:
+                    combined_frag_dict[key_index] = frag_dict[key][split_pos[i - 1]:split_pos[i]]
+                if i + 1 not in range(len(split_pos)):
+                    key_index = key + str(i + 1)
+                    combined_frag_dict[key_index] = frag_dict[key][split_pos[i]:]
         self.frags = []
         for key_index in combined_frag_dict:
             merged_frag = Region.merge_all_frags(combined_frag_dict[key_index])
@@ -218,17 +217,24 @@ def main():
                         last_region.frags.append(frag)
 
     for region in regions:
-        region.combine_frags(args.max, args.distance, args.stringent)
+        region.combine_frags(args.max, args.distance)
         region.keep_primary(args.perc, args.broad)
         num_frags = len(region.frags)
-        for index, frag in enumerate(region.frags):
-            if index == 0:
-                frag.from_start = region.from_start
-            if index == num_frags - 1:
-                frag.from_end = region.from_end
-            print("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s" %
-                  (frag.from_chr, frag.from_start, frag.from_end, frag.from_strand, region.from_summit, region.from_signal,
-                   frag.to_chr, frag.to_start, frag.to_end, frag.to_strand))
+        if args.stringent:  # only one fragment in one region allowed if stringent.
+            if (num_frags == 1 and abs(region.frags[0].from_start - region.from_start) < args.distance
+               and abs(region.frags[0].from_end - region.from_end) < args.distance):
+                print("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s" %
+                      (region.from_chr, region.from_start, region.from_end, region.from_strand, region.from_summit, region.from_signal,
+                       region.frags[0].to_chr, region.frags[0].to_start, region.frags[0].to_end, region.frags[0].to_strand))
+        else:
+            for index, frag in enumerate(region.frags):
+                if index == 0:
+                    frag.from_start = region.from_start
+                if index == num_frags - 1:
+                    frag.from_end = region.from_end
+                print("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s" %
+                      (frag.from_chr, frag.from_start, frag.from_end, frag.from_strand, region.from_summit, region.from_signal,
+                       frag.to_chr, frag.to_start, frag.to_end, frag.to_strand))
 
 
 if __name__ == "__main__":
