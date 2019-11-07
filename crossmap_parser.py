@@ -101,7 +101,7 @@ class Region:
                 and frag1.to_strand == frag2.to_strand
                 and to_gap < distance
                 and min(from_gap, to_gap) < mini
-                and (frag2.to_start >= frag1.to_start if (frag1.to_strand == "+") else frag2.to_end <= frag1.to_end))
+                and (frag2.to_start >= frag1.to_start if (frag1.to_strand == frag1.from_strand) else frag2.to_end <= frag1.to_end))
 
 
 class Frag:
