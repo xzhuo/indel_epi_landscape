@@ -36,7 +36,7 @@ class Region:
         ''' Combine frags based on chr, strand, and within size_limit. at least one of the gaps is < mini to be considered as continuous fragments.'''
         frag_dict = {}
         for frag in self.frags:
-            key = frag.to_chr + frag.to_strand
+            key = frag.to_chr
             if key in frag_dict:
                 frag_dict[key].append(frag)
             else:
@@ -215,6 +215,7 @@ def main():
                         last_region.frags[-1].merge_frags(frag)
                     else:
                         last_region.frags.append(frag)
+        regions.append(copy.deepcopy(last_region))  # append the last entry.
 
     for region in regions:
         region.combine_frags(args.max, args.distance)
