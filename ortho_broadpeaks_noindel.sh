@@ -17,7 +17,7 @@ python2 ~/github/indel_epi_landscape/CrossMap+.py bed $panTro5ToHg38 <(awk 'BEGI
 perl -lane 'BEGIN{$,="\t"}{@i=split /:/, $F[4]; print $F[5],$F[6],$F[7],$F[8],$F[9],$F[10],$F[4],$F[0],$F[1],$F[2],$F[8],$F[9],$F[3] if $i[1] eq $F[12] && $i[2] == $F[13] && $i[3] == $F[14]}' hg38_crossmap_panTro5_back_hg38.${m}.lite.strand.bed > hg38_crossmap_panTro5_bothway.${m}.lite.strand.bed
 
 # run crossmap parser and filter:
-python3 ~/github/indel_epi_landscape/crossmap_parser.py -s -d 20 -m 20 -b -i hg38_crossmap_panTro5_bothway.${m}.lite.strand.bed > hg38_crossmap_panTro5.${m}.filter.bed
+python3 ~/github/indel_epi_landscape/crossmap_parser.py -n -d 20 -i hg38_crossmap_panTro5_bothway.${m}.lite.strand.bed > hg38_crossmap_panTro5.${m}.filter.bed
 perl -lane 'print $_ if length($F[6]) < 6 and $F[6] ne "chrM"' hg38_crossmap_panTro5.${m}.filter.bed > hg38_crossmap_panTro5.${m}.filter.lite.bed
 perl -lane 'BEGIN{$,="\t"}{print $F[0],$F[1],$F[2],"human_$.",$F[5],$F[3]}' hg38_crossmap_panTro5.${m}.filter.lite.bed |sort -k1,1 -k2,2n -k3,3n > hg38_peak_onhg38.${m}.lite.bed
 perl -lane 'BEGIN{$,="\t"}{print $F[6],$F[7],$F[8],"human_$.",$F[5],$F[9]}' hg38_crossmap_panTro5.${m}.filter.lite.bed |sort -k1,1 -k2,2n -k3,3n > hg38_peak_onpanTro5.${m}.lite.bed
@@ -29,7 +29,7 @@ python2 ~/github/indel_epi_landscape/CrossMap+.py bed $hg38ToPanTro5 <(awk 'BEGI
 perl -lane 'BEGIN{$,="\t"}{@i=split /:/, $F[4]; print $F[5],$F[6],$F[7],$F[8],$F[9],$F[10],$F[4],$F[0],$F[1],$F[2],$F[8],$F[9],$F[3] if $i[1] eq $F[12] && $i[2] == $F[13] && $i[3] == $F[14]}' panTro5_crossmap_hg38_back_panTro5.${m}.lite.strand.bed > panTro5_crossmap_hg38_bothway.${m}.lite.strand.bed
 
 # run crossmap parser and filter:
-python3 ~/github/indel_epi_landscape/crossmap_parser.py -s -d 20 -m 20 -b -i panTro5_crossmap_hg38_bothway.${m}.lite.strand.bed > panTro5_crossmap_hg38.${m}.filter.bed
+python3 ~/github/indel_epi_landscape/crossmap_parser.py -n -d 20 -i panTro5_crossmap_hg38_bothway.${m}.lite.strand.bed > panTro5_crossmap_hg38.${m}.filter.bed
 perl -lane 'print $_ if length($F[6]) < 6 and $F[6] ne "chrM"' panTro5_crossmap_hg38.${m}.filter.bed > panTro5_crossmap_hg38.${m}.filter.lite.bed
 perl -lane 'BEGIN{$,="\t"}{print $F[0],$F[1],$F[2],"chimp_$.",$F[5],$F[3]}' panTro5_crossmap_hg38.${m}.filter.lite.bed |sort -k1,1 -k2,2n -k3,3n > panTro5_peak_onpanTro5.${m}.lite.bed
 perl -lane 'BEGIN{$,="\t"}{print $F[6],$F[7],$F[8],"chimp_$.",$F[5],$F[9]}' panTro5_crossmap_hg38.${m}.filter.lite.bed |sort -k1,1 -k2,2n -k3,3n > panTro5_peak_onhg38.${m}.lite.bed
