@@ -189,8 +189,16 @@ def _get_args():
         '-s',
         action="store_true",
         dest="stringent",
+        default=True,
+        help='If false, return splitted regions after final combination process. Default is true',
+    )
+    parser.add_argument(
+        '--noindel',
+        '-n',
+        action="store_true",
+        dest="noindel",
         default=False,
-        help='If true, remove all regions splitted by indels larger than max. Default is false',
+        help='If true, only return regions without any indel > distance',
     )
     return parser.parse_args()
 
@@ -218,24 +226,30 @@ def main():
         regions.append(copy.deepcopy(last_region))  # append the last entry.
 
     for region in regions:
-        region.combine_frags(args.max, args.distance)
-        region.keep_primary(args.perc, args.broad)
-        num_frags = len(region.frags)
-        if args.stringent:  # only one fragment in one region allowed if stringent.
-            if (num_frags == 1 and abs(region.frags[0].from_start - region.from_start) < args.distance
+        if args.noindel:
+            if (len(region.frags) == 1 and abs(region.frags[0].from_start - region.from_start) < args.distance
                and abs(region.frags[0].from_end - region.from_end) < args.distance):
                 print("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s" %
                       (region.from_chr, region.from_start, region.from_end, region.from_strand, region.from_summit, region.from_signal,
                        region.frags[0].to_chr, region.frags[0].to_start, region.frags[0].to_end, region.frags[0].to_strand))
         else:
-            for index, frag in enumerate(region.frags):
-                if index == 0:
-                    frag.from_start = region.from_start
-                if index == num_frags - 1:
-                    frag.from_end = region.from_end
-                print("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s" %
-                      (frag.from_chr, frag.from_start, frag.from_end, frag.from_strand, region.from_summit, region.from_signal,
-                       frag.to_chr, frag.to_start, frag.to_end, frag.to_strand))
+            region.combine_frags(args.max, args.distance)
+            num_frags = len(region.frags)
+            if args.stringent:  # only one fragment in one region allowed if stringent.
+                if num_frags == 1:
+                    print("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s" %
+                          (region.from_chr, region.from_start, region.from_end, region.from_strand, region.from_summit, region.from_signal,
+                           region.frags[0].to_chr, region.frags[0].to_start, region.frags[0].to_end, region.frags[0].to_strand))
+            else:
+                region.keep_primary(args.perc, args.broad)
+                for index, frag in enumerate(region.frags):
+                    if index == 0:
+                        frag.from_start = region.from_start
+                    if index == num_frags - 1:
+                        frag.from_end = region.from_end
+                    print("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s" %
+                          (frag.from_chr, frag.from_start, frag.from_end, frag.from_strand, region.from_summit, region.from_signal,
+                           frag.to_chr, frag.to_start, frag.to_end, frag.to_strand))
 
 
 if __name__ == "__main__":
