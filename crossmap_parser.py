@@ -45,7 +45,7 @@ class Region:
         for key in frag_dict:
             split_pos = []
             for i in range(1, len(frag_dict[key])):
-                if not Region.can_merge(frag_dict[key][i - 1], frag_dict[key][i], size_limit, mini):
+                if not Region.can_merge(frag_dict[key][i - 1], frag_dict[key][i], size_limit, mini, False):
                     split_pos.append(i)
             if not len(split_pos):
                 combined_frag_dict[key] = frag_dict[key]
@@ -91,17 +91,25 @@ class Region:
         return new_frag
 
     @staticmethod
-    def can_merge(frag1, frag2, distance, mini):
+    def can_merge(frag1, frag2, distance, mini, noindel):
         from_gap = abs(max(frag1.from_start, frag2.from_start) - min(frag1.from_end, frag2.from_end))
         to_gap = abs(max(frag1.to_start, frag2.to_start) - min(frag1.to_end, frag2.to_end))
-        return (frag1.from_chr == frag2.from_chr
-                and frag1.from_strand == frag2.from_strand
-                and from_gap < distance
-                and frag1.to_chr == frag2.to_chr
-                and frag1.to_strand == frag2.to_strand
-                and to_gap < distance
-                and min(from_gap, to_gap) < mini
-                and (frag2.to_start >= frag1.to_start if (frag1.to_strand == frag1.from_strand) else frag2.to_end <= frag1.to_end))
+        if noindel:
+            return (frag1.from_chr == frag2.from_chr
+                    and frag1.from_strand == frag2.from_strand
+                    and frag1.to_chr == frag2.to_chr
+                    and frag1.to_strand == frag2.to_strand
+                    and max(from_gap, to_gap) < distance
+                    and max(from_gap, to_gap) < mini
+                    and (frag2.to_start >= frag1.to_start if (frag1.to_strand == frag1.from_strand) else frag2.to_end <= frag1.to_end))
+        else:
+            return (frag1.from_chr == frag2.from_chr
+                    and frag1.from_strand == frag2.from_strand
+                    and frag1.to_chr == frag2.to_chr
+                    and frag1.to_strand == frag2.to_strand
+                    and max(from_gap, to_gap) < distance
+                    and min(from_gap, to_gap) < mini
+                    and (frag2.to_start >= frag1.to_start if (frag1.to_strand == frag1.from_strand) else frag2.to_end <= frag1.to_end))
 
 
 class Frag:
@@ -219,7 +227,7 @@ def main():
                 else:
                     frag = Frag()
                     frag.digest_line(line)
-                    if Region.can_merge(last_region.frags[-1], frag, args.distance, args.distance):
+                    if Region.can_merge(last_region.frags[-1], frag, args.distance, args.distance, args.noindel):
                         last_region.frags[-1].merge_frags(frag)
                     else:
                         last_region.frags.append(frag)
