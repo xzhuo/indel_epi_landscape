@@ -164,7 +164,7 @@ def _get_args():
         dest="distance",
         default=50,
         type=int,
-        help='The distance used to combine small indels into a large region. Default is 50bp',
+        help='The distance used to define continous regions. fragments within a region are considered continous if the gap is smaller than the distance. Default is 50bp',
     )
     parser.add_argument(
         '--max',
@@ -173,7 +173,7 @@ def _get_args():
         dest="max",
         default=50000,
         type=int,
-        help='The distance used to define the max of peak size',
+        help='The distance used as upper limit of tolerated INDELs. Fragments separated by INDELs larger than the max distance will not be merged. Default is 50,000bp',
     )
     parser.add_argument(
         '--perc',
@@ -182,7 +182,7 @@ def _get_args():
         dest="perc",
         default=0.2,
         type=float,
-        help='Threshold to remove non-primary fragments (fraction of total region length)',
+        help='The threshold to remove non-primary fragments (fraction of total region length)',
     )
     parser.add_argument(
         '--broad',
@@ -198,7 +198,7 @@ def _get_args():
         action="store_true",
         dest="stringent",
         default=True,
-        help='If false, return splitted regions after final combination process. Default is true',
+        help='If false, return splitted regions after final combination process. Default is True',
     )
     parser.add_argument(
         '--noindel',
@@ -206,7 +206,7 @@ def _get_args():
         action="store_true",
         dest="noindel",
         default=False,
-        help='If true, only return regions without any indel > distance',
+        help='If True, only return regions without any indel > distance',
     )
     return parser.parse_args()
 
