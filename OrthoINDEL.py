@@ -219,7 +219,7 @@ def main():
         for line in Fh:
             line = line.rstrip()
             split = line.split()[6]
-            if split != 'Fail':
+            if split != 'Fail' and split != 'Unmap':
                 if not (hasattr(last_region, 'from_chr') and line.split()[0] == last_region.from_chr and int(line.split()[1]) == last_region.from_start and int(line.split()[2]) == last_region.from_end):
                     if len(last_region.frags) > 0:
                         regions.append(copy.deepcopy(last_region))
