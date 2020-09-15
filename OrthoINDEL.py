@@ -35,18 +35,24 @@ class Region:
     def combine_frags(self, size_limit, mini):
         ''' Combine frags based on chr, strand, and within size_limit. at least one of the gaps is < mini to be considered as continuous fragments.'''
         frag_dict = {}
+        region_message = ''
         for frag in self.frags:
             key = frag.to_chr
             if key in frag_dict:
                 frag_dict[key].append(frag)
             else:
                 frag_dict[key] = [frag]
+        if len(frag_dict) > 1:
+            region_message = "Split_from_chromosome"
         combined_frag_dict = {}
         for key in frag_dict:
             split_pos = []
             for i in range(1, len(frag_dict[key])):
-                if not Region.can_merge(frag_dict[key][i - 1], frag_dict[key][i], size_limit, mini, False):
+                mergeable, message = Region.can_merge(frag_dict[key][i - 1], frag_dict[key][i], size_limit, mini, False)
+                if not mergeable:
                     split_pos.append(i)
+                    if len(message) > len(region_message):
+                        region_message = message
             if not len(split_pos):
                 combined_frag_dict[key] = frag_dict[key]
             for i in range(len(split_pos)):
@@ -62,6 +68,7 @@ class Region:
         for key_index in combined_frag_dict:
             merged_frag = Region.merge_all_frags(combined_frag_dict[key_index])
             self.frags.append(merged_frag)
+        return region_message
 
     def keep_primary(self, perc, broad):
         '''If primary fragments found (frag with summit), then delele frags that are less then given perctage of total length'''
@@ -95,21 +102,43 @@ class Region:
         from_gap = abs(max(frag1.from_start, frag2.from_start) - min(frag1.from_end, frag2.from_end))
         to_gap = abs(max(frag1.to_start, frag2.to_start) - min(frag1.to_end, frag2.to_end))
         if noindel:
-            return (frag1.from_chr == frag2.from_chr
-                    and frag1.from_strand == frag2.from_strand
-                    and frag1.to_chr == frag2.to_chr
-                    and frag1.to_strand == frag2.to_strand
-                    and max(from_gap, to_gap) < distance
-                    and max(from_gap, to_gap) < mini
-                    and (frag2.to_start >= frag1.to_start if (frag1.to_strand == frag1.from_strand) else frag2.to_end <= frag1.to_end))
+            mergeable = (frag1.from_chr == frag2.from_chr
+                         and frag1.from_strand == frag2.from_strand
+                         and frag1.to_chr == frag2.to_chr
+                         and frag1.to_strand == frag2.to_strand
+                         and max(from_gap, to_gap) < distance
+                         and max(from_gap, to_gap) < mini
+                         and (frag2.to_start >= frag1.to_start if (frag1.to_strand == frag1.from_strand) else frag2.to_end <= frag1.to_end))
+            return mergeable, ''
         else:
-            return (frag1.from_chr == frag2.from_chr
-                    and frag1.from_strand == frag2.from_strand
-                    and frag1.to_chr == frag2.to_chr
-                    and frag1.to_strand == frag2.to_strand
-                    and max(from_gap, to_gap) < distance
-                    and min(from_gap, to_gap) < mini
-                    and (frag2.to_start >= frag1.to_start if (frag1.to_strand == frag1.from_strand) else frag2.to_end <= frag1.to_end))
+            # return (frag1.from_chr == frag2.from_chr
+            #         and frag1.from_strand == frag2.from_strand
+            #         and frag1.to_chr == frag2.to_chr
+            #         and frag1.to_strand == frag2.to_strand
+            #         and max(from_gap, to_gap) < distance
+            #         and min(from_gap, to_gap) < mini
+            #         and (frag2.to_start >= frag1.to_start if (frag1.to_strand == frag1.from_strand) else frag2.to_end <= frag1.to_end))
+
+            # evaluation:
+            mergeable = False
+            if (frag1.from_chr != frag2.from_chr):
+                message = "Split_from_chromosome"
+            elif (frag1.from_strand != frag2.from_strand):
+                message = "Inverse_from_chr"
+            elif (frag1.to_chr != frag2.to_chr):
+                message = "Split_to_chr"
+            elif (frag1.to_strand != frag2.to_strand):
+                message = "Inv_to_chr"
+            elif max(from_gap, to_gap) >= distance:
+                message = "TooBigGap"
+            elif min(from_gap, to_gap) >= mini:
+                message = "Replacem"
+            elif ((frag2.to_start < frag1.to_start if (frag1.to_strand == frag1.from_strand) else frag2.to_end > frag1.to_end)):
+                message = "Overlap"
+            else:
+                mergeable = True
+                message = ''
+            return mergeable, message
 
 
 class Frag:
@@ -213,6 +242,7 @@ def _get_args():
 
 def main():
     args = _get_args()
+    summary_list = []
     with open(args.input, 'r') as Fh:
         regions = []
         last_region = Region()
@@ -227,10 +257,13 @@ def main():
                 else:
                     frag = Frag()
                     frag.digest_line(line)
-                    if Region.can_merge(last_region.frags[-1], frag, args.distance, args.distance, args.noindel):
+                    mergeable, info = Region.can_merge(last_region.frags[-1], frag, args.distance, args.distance, args.noindel)
+                    if mergeable:
                         last_region.frags[-1].merge_frags(frag)
                     else:
                         last_region.frags.append(frag)
+            else:
+                summary_list.append(line)
         regions.append(copy.deepcopy(last_region))  # append the last entry.
 
     for region in regions:
@@ -241,13 +274,17 @@ def main():
                       (region.from_chr, region.from_start, region.from_end, region.from_strand, region.from_summit, region.from_signal,
                        region.frags[0].to_chr, region.frags[0].to_start, region.frags[0].to_end, region.frags[0].to_strand))
         else:
-            region.combine_frags(args.max, args.distance)
+            message = region.combine_frags(args.max, args.distance)
             num_frags = len(region.frags)
             if args.stringent:  # only one fragment in one region allowed if stringent.
                 if num_frags == 1:
                     print("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s" %
                           (region.from_chr, region.from_start, region.from_end, region.from_strand, region.from_summit, region.from_signal,
                            region.frags[0].to_chr, region.frags[0].to_start, region.frags[0].to_end, region.frags[0].to_strand))
+                else:
+                    outcome = message
+                    line = "\t".join([region.from_chr, str(region.from_start), str(region.from_end), region.from_strand, str(region.from_summit), str(region.from_signal), outcome])
+                    summary_list.append(line)
             else:
                 region.keep_primary(args.perc, args.broad)
                 for index, frag in enumerate(region.frags):
@@ -258,6 +295,8 @@ def main():
                     print("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s" %
                           (frag.from_chr, frag.from_start, frag.from_end, frag.from_strand, region.from_summit, region.from_signal,
                            frag.to_chr, frag.to_start, frag.to_end, frag.to_strand))
+    with open("OrthoINDELUnmapped.txt", 'w') as Fh:
+        Fh.writelines("\n".join(summary_list))
 
 
 if __name__ == "__main__":
